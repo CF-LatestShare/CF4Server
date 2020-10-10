@@ -9,16 +9,13 @@ using UnityEngine;
 #endif
 namespace CosmosServer
 {
-    [MessagePackObject]
     public class PlayerEntity : IDisposable
     {
-        [Key(0)]
         public int SessionId { get; set; }
 
 #if !SERVER
         PlayerEntityAgent agent;
 #endif
-        [Key(1)]
         public int PlayerId { get; set; }
 
         public void Dispose()
@@ -43,12 +40,16 @@ namespace CosmosServer
             GameManager.CustomeModule<MessageManager>().SendCommandMessage(SessionId, data);
 #endif
         }
-        public void SendCommadMessage<T>(byte opCode, T data, byte cmd = 0)
+        public void SendCommadMessage<T>(byte opCode, T data, short returnCode = 0)
         {
 #if !SERVER
 #else
-            GameManager.CustomeModule<MessageManager>().SendCommandMessage(SessionId,opCode, data,cmd);
+            GameManager.CustomeModule<MessageManager>().SendCommandMessage(SessionId,opCode, data,returnCode);
 #endif
+        }
+        public override string ToString()
+        {
+            return $"SessionId:{SessionId} ; PlayerId:{PlayerId}";
         }
     }
 }

@@ -12,7 +12,7 @@ namespace Protocol
         [Key(1)]
         public object DataContract { get; set; }
         [Key(2)]
-        public byte Cmd { get; set; }
+        public short ReturnCode { get; set; }
         public OperationData() { }
         public OperationData(byte operationCode)
         {
@@ -24,14 +24,14 @@ namespace Protocol
             {
                 DataContract = this.DataContract,
                 OperationCode = this.OperationCode,
-                Cmd = this.Cmd
+                ReturnCode = this.ReturnCode
             };
         }
         public virtual void Dispose()
         {
             OperationCode = 0;
             DataContract = null;
-            Cmd = 0;
+            ReturnCode = 0;
         }
     }
 }

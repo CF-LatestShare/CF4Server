@@ -17,7 +17,7 @@ namespace Protocol
             {
                 DataContract = this.DataContract,
                 OperationCode = this.OperationCode,
-                Cmd = this.Cmd,
+                ReturnCode = this.ReturnCode,
                 LatestCmd = this.LatestCmd
             };
         }

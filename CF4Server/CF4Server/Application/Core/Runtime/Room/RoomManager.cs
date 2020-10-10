@@ -10,6 +10,8 @@ namespace CosmosServer
     [CustomeModule]
     public class RoomManager : Module<RoomManager>
     {
+
+#if SERVER
         Action roomRefreshHandler;
         event Action RoomRefreshHandler
         {
@@ -20,7 +22,6 @@ namespace CosmosServer
                 catch (Exception e) { Utility.Debug.LogError(e); }
             }
         }
-#if SERVER
         Dictionary<int, RoomEntity> roomDict = new Dictionary<int, RoomEntity>();
         Queue<RoomEntity> roomPoolQueue = new Queue<RoomEntity>();
         int updateInterval = ApplicationBuilder._MSPerTick;
@@ -32,8 +33,10 @@ namespace CosmosServer
         PlayerManager playerMgrInstance;
         public override void OnPreparatory()
         {
-            CommandEventCore.Instance.AddEventListener(ProtocolDefine.OPERATION_ROOM, RoomCommandHandler);
-            playerMgrInstance= GameManager.CustomeModule<PlayerManager>();
+            CommandEventCore.Instance.AddEventListener(ProtocolDefine.OPERATION_ENTERROOM, EnterRoomHandler);
+            CommandEventCore.Instance.AddEventListener(ProtocolDefine.OPERATION_EXITROOM, ExitRoomHandler);
+            CommandEventCore.Instance.AddEventListener(ProtocolDefine.OPERATION_PLYAERINPUT, PlayerInputHandler);
+            playerMgrInstance = GameManager.CustomeModule<PlayerManager>();
 #if SERVER
             latestTime = Utility.Time.MillisecondTimeStamp() + updateInterval;
 #endif
@@ -48,6 +51,38 @@ namespace CosmosServer
                 latestTime = now + updateInterval;
                 roomRefreshHandler?.Invoke();
             }
+#else
+
+#endif
+        }
+        void EnterRoomHandler(OperationData opData)
+        {
+            //系统分配房间；
+            FixPlayer player = opData.DataContract as FixPlayer;
+            List<RoomEntity> roomSet = new List<RoomEntity>();
+            roomSet.AddRange(roomDict.Values);
+            var enterableRoom = roomSet.Find((r) => r.IsFull);
+            if (enterableRoom == null)
+                SpawnRoom(out enterableRoom);
+            playerMgrInstance.TryAddPlayer(player.SessionId, out var pe);
+            enterableRoom.Enter(pe);
+        }
+        void ExitRoomHandler(OperationData opData)
+        {
+            var rp = opData.DataContract as FixRoomPlayer;
+            roomDict.TryGetValue(rp.RoomId, out var roomEntity);
+            playerMgrInstance.TryGetPlayer(rp.Player.PlayerId, out var pe);
+            roomEntity.Exit(pe);
+            if (roomEntity.PlayerCount == 0)
+                DespawnRoom(roomEntity);
+        }
+        void PlayerInputHandler(OperationData opData)
+        {
+#if SERVER
+            var input = opData.DataContract as FixInput;
+            var result = roomDict.TryGetValue(input.RoomId, out var room);
+            if (result)
+                room.OnPlayerInput(input);
 #else
 
 #endif
@@ -81,44 +116,6 @@ namespace CosmosServer
             return true;
 #endif
         }
-        /// <summary>
-        /// 处理从客户端接收到的cmd命令
-        /// </summary>
-        void RoomCommandHandler(OperationData opData)
-        {
-            switch (opData.Cmd)
-            {
-               case ProtocolDefine.CMD_SYN:
-                    {
-                        FixPlayer player = opData.DataContract as FixPlayer;
-                        List<RoomEntity> roomSet = new List<RoomEntity>();
-                        roomSet.AddRange(roomDict.Values);
-                        var enterableRoom = roomSet.Find((r) => r.IsFull);
-                        if (enterableRoom == null)
-                            SpawnRoom(out enterableRoom);
-                        playerMgrInstance.TryAddPlayer(player.SessionId, out var pe);
-                        enterableRoom.Enter(pe);
-                    }
-                    break;
-                case ProtocolDefine.CMD_FIN:
-                    {
-                        var  rp= opData.DataContract as FixRoomPlayer;
-                        roomDict.TryGetValue(rp.Room.RoomId, out var roomEntity);
-                        playerMgrInstance.TryGetPlayer(rp.Player.PlayerId, out var pe);
-                        roomEntity.Exit(pe);
-                    }
-                    break;
-                case ProtocolDefine.CMD_MSG:
-                    {
-                        //MSG无ACK
-                    }
-                    break;
-                case ProtocolDefine.CMD_ACK:
-                    {
-                        //服务器主动发送消息到客户端的ACK
-                    }
-                    break;
-            }
-        }
+
     }
 }

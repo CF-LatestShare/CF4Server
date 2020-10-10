@@ -35,9 +35,9 @@ namespace CosmosServer
                 GameManager.NetworkManager.SendNetworkMessage(msg);
             }
         }
-        public void SendCommandMessage<T>(long sessionId, byte opCode, T data, byte cmd = 0)
+        public void SendCommandMessage<T>(long sessionId, byte opCode, T data, short returnCode = 0)
         {
-            var opData = SpawnOpData(opCode, data, cmd);
+            var opData = SpawnOpData(opCode, data, returnCode);
             var buffer = Utility.MessagePack.ToByteArray(opData);
             if (buffer != null)
             {
@@ -123,14 +123,14 @@ namespace CosmosServer
                 GameManager.NetworkManager.SendNetworkMessage(msg);
             }
         }
-        OperationData SpawnOpData<T>(byte opCode, T packet, byte cmd = 0)
+        OperationData SpawnOpData<T>(byte opCode, T packet, short returnCode = 0)
         {
             var result = opDataQueue.TryDequeue(out var opData);
             if (!result)
                 opData = new OperationData();
             opData.DataContract = packet;
             opData.OperationCode = opCode;
-            opData.Cmd = cmd;
+            opData.ReturnCode = returnCode;
             return opData;
         }
         void DespawnOpData(OperationData opData)

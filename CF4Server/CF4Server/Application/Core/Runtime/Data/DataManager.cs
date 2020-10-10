@@ -4,7 +4,9 @@ using System.Text;
 using Cosmos;
 namespace CosmosServer
 {
+#if SERVER
     [CustomeModule]
+#endif
     public class DataManager : Module<DataManager>, ISimpleKeyValue<Type, object>
     {
         /// <summary>
@@ -24,7 +26,7 @@ namespace CosmosServer
         public override void OnInitialization()
         {
             InitProvider();
-            latestRefreshTime = Utility.Time.SecondNow()+intervalSec;
+            latestRefreshTime = Utility.Time.SecondNow() + intervalSec;
         }
         /// <summary>
         /// 覆写轮询函数；
@@ -39,7 +41,7 @@ namespace CosmosServer
             {
                 jsonDict = dataProvider?.LoadData() as Dictionary<string, string>;
                 dataDict = dataProvider?.ParseData() as Dictionary<Type, object>;
-                latestRefreshTime = now+intervalSec;
+                latestRefreshTime = now + intervalSec;
             }
         }
         public bool ContainsKey(Type key)
@@ -119,10 +121,10 @@ namespace CosmosServer
         }
         void InitProvider()
         {
-            var obj = Utility.Assembly.GetInstanceByAttribute<TargetHelperAttribute>(typeof(IDataProvider));
+            var obj = Utility.Assembly.GetInstanceByAttribute<ImplementProviderAttribute>(typeof(IDataProvider));
             dataProvider = obj as IDataProvider;
-           jsonDict= dataProvider?.LoadData() as Dictionary<string,string>;
-           dataDict= dataProvider?.ParseData() as Dictionary<Type,object>;
+            jsonDict = dataProvider?.LoadData() as Dictionary<string, string>;
+            dataDict = dataProvider?.ParseData() as Dictionary<Type, object>;
         }
     }
 }

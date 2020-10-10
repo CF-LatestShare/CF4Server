@@ -19,10 +19,6 @@ namespace CosmosServer
         /// </summary>
         Queue<PlayerEntity> playerPoolQueue = new Queue<PlayerEntity>();
         int playerIndex;
-        public override void OnInitialization()
-        {
-            CommandEventCore.Instance.AddEventListener(ProtocolDefine.OPERATION_ROOM, PlayerCmdHandler);
-        }
         public bool TryAddPlayer(int sessionId,out PlayerEntity playerEntity)
         {
 #if SERVER
@@ -67,10 +63,6 @@ namespace CosmosServer
         public bool TryGetPlayer(int playerId, out PlayerEntity playerEntity)
         {
             return playerDict.TryGetValue(playerId, out playerEntity);
-        }
-        void PlayerCmdHandler(OperationData opData)
-        {
-
         }
     }
 }

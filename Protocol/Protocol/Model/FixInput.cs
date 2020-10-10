@@ -11,25 +11,17 @@ namespace Protocol
     [MessagePackObject]
     public class FixInput
     {
-        [Key(2)]
-        public int SessionId { get; set; }
-        [Key(3)]
-        public int PlayerId { get; set; }
-        [Key(4)]
-        /// <summary>
-        /// CMD指令；
-        /// 全部指令为：SYN，FIN，MSG，ACK
-        /// </summary>
-        public byte Cmd { get; set; }
-        [Key(5)]
+        [Key(0)]
+        public FixPlayer  Player{ get; set; }
+        [Key(1)]
         public int RoomId { get; set; }
-        [Key(6)]
+        [Key(2)]
         public int Tick { get; set; }
-        [Key(7)]
+        [Key(3)]
         public FixVector3 Position { get; set; }
-        [Key(8)]
+        [Key(4)]
         public  FixVector3 Rotation { get; set; }
-        [Key(9)]
+        [Key(5)]
         public bool ShiftDown { get; set; }
     }
 }

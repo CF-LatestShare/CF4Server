@@ -9,7 +9,7 @@ namespace Protocol
     public class FixRoomPlayer
     {
         [Key(0)]
-        public FixRoom Room { get; set; }
+        public int RoomId { get; set; }
         [Key(1)]
         public FixPlayer Player { get; set; }
     }

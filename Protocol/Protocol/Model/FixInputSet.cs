@@ -8,22 +8,17 @@ namespace Protocol
     [MessagePackObject]
     public class FixInputSet
     {
-        [Key(2)]
-        public int SessionId { get; set; }
-        [Key(2)]
-        public FixPlayerSet Players{ get; set; }
-        [Key(3)]
+        [Key(0)]
         public int Tick { get; set; }
-        [Key(4)]
+        [Key(1)]
         public int RoomId { get; set; }
-        [Key(5)]
+        [Key(2)]
         public List<FixInput> InputSet { get; set; }
         public void Clear()
         {
             Tick = 0;
             RoomId = 0;
             InputSet = null;
-            SessionId = 0;
         }
     }
 }

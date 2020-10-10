@@ -7,7 +7,7 @@ namespace Protocol
     [MessagePackObject]
     public class FixRoom
     {
-        [Key(3)]
+        [Key(0)]
         public int RoomId { get; set; }
     }
 }

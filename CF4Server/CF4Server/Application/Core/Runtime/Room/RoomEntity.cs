@@ -20,16 +20,15 @@ namespace CosmosServer
         public int PlayerCount { get { return playerDict.Count; } }
         public bool IsFull { get { return PlayerCount >= _MaxPlayer; } }
         public bool IsRunning { get; private set; }
-
         /// <summary>
         /// 当前房间帧指令数据字典；
         /// </summary>
 #if SERVER
         Dictionary<int, List<FixInput>> tickCmdDict = new Dictionary<int, List<FixInput>>();
 #else
-        Dictionary<int, InputSetProtocol> tickCmdDict = new Dictionary<int, InputSetProtocol>();
+        Dictionary<int, FixInputSet> tickCmdDict = new Dictionary<int, FixInputSet>();
 #endif
-        FixInputSet inputSetProtocol = new FixInputSet();
+        FixInputSet playerInputSets = new FixInputSet();
         /// <summary>
         /// 玩家字典；
         /// 玩家ID->玩家；
@@ -54,23 +53,29 @@ namespace CosmosServer
         /// 游戏逻辑帧;
         /// </summary>
         int tick = 0;
+#if SERVER
         MessageManager msgMgrInstance;
         PlayerManager playerMgrInstance;
-        FixRoom roomProtol = new FixRoom();
+#endif
+        FixPlayer player = new FixPlayer();
+        FixRoomPlayer roomPlayer = new FixRoomPlayer();
+#if SERVER
         public RoomEntity()
         {
             msgMgrInstance = GameManager.CustomeModule<MessageManager>();
             playerMgrInstance = GameManager.CustomeModule<PlayerManager>();
         }
+#endif
         public void Oninit(int roomId)
         {
             this.RoomId = roomId;
-            inputSetProtocol.RoomId = roomId;
+            playerInputSets.RoomId = roomId;
             IsAlive = true;
-            roomProtol.RoomId = roomId;
+            roomPlayer.RoomId = roomId;
+            roomPlayer.Player = player;
         }
 #if !SERVER
-        public void CacheInputCmds(InputSetProtocol inputs)
+        public void OnPlayersInput(FixInputSet inputs)
         {
             //玩家收到当前服务器帧数据；
             if (inputs.Tick > tick)
@@ -84,7 +89,7 @@ namespace CosmosServer
         /// <summary>
         ///缓存输入指令； 
         /// </summary>
-        public void CacheInputCmd(FixInput input)
+        public void OnPlayerInput(FixInput input)
         {
             //若玩家延迟，发送的帧落后当前帧数，则将帧转换为当前帧；
             if (input.Tick < tick)
@@ -95,71 +100,52 @@ namespace CosmosServer
             set.Add(input);
         }
 #endif
-        public void Enter(PlayerEntity playerEntity )
+        public void Enter(PlayerEntity playerEntity)
         {
             var result = playerDict.TryAdd(playerEntity.PlayerId, playerEntity);
             if (result)
             {
+#if SERVER
+                player.PlayerId = playerEntity.PlayerId;
+                player.SessionId= playerEntity.SessionId;
                 BroadcastCmdHandler += playerEntity.SendCommadMessage;
                 msgMgrInstance.SendCommandMessage
-                    (playerEntity.SessionId, ProtocolDefine.OPERATION_ROOM, 
-                    roomProtol,ProtocolDefine.CMD_ACK) ;
+                    (playerEntity.SessionId, ProtocolDefine.OPERATION_ENTERROOM, roomPlayer, ProtocolDefine.RETURN_SUCCESS);
             }
+            else
+                playerEntity.SendCommadMessage
+                     (ProtocolDefine.OPERATION_EXITROOM, roomPlayer, ProtocolDefine.RETURN_ALREADYEXISTS);
+#else
+                BroadcastCmdHandler += playerEntity.SendCommadMessage;
+            }
+#endif
+            Utility.Debug.LogWarning($"加入房间 ,PlayerEntity{playerEntity}");
         }
         public void Exit(PlayerEntity playerEntity)
         {
             var result = playerDict.Remove(playerEntity.PlayerId);
             if (result)
             {
+#if SERVER
+                player.PlayerId = playerEntity.PlayerId;
+                player.SessionId = playerEntity.SessionId;
                 BroadcastCmdHandler -= playerEntity.SendCommadMessage;
                 playerEntity.SendCommadMessage
-                    (ProtocolDefine.OPERATION_ROOM, roomProtol, ProtocolDefine.CMD_ACK);
+                    (ProtocolDefine.OPERATION_EXITROOM, roomPlayer, ProtocolDefine.RETURN_SUCCESS);
+                playerEntity.Dispose();
             }
+            else
+                playerEntity.SendCommadMessage
+                      (ProtocolDefine.OPERATION_EXITROOM, roomPlayer, ProtocolDefine.RETURN_NOTFOUND);
+#else
+                BroadcastCmdHandler -= playerEntity.SendCommadMessage;
+            }
+#endif
+            Utility.Debug.LogWarning($"离开房间 ,PlayerEntity{playerEntity}");
         }
         public void RunGame()
         {
             IsRunning = true;
-        }
-            /// <summary>
-            ///玩家通过指令加入； 
-            /// </summary>
-            public void Join(FixInput cmd)
-        {
-            playerMgrInstance.TryAddPlayer(cmd.SessionId,out var pe);
-            pe.SessionId = cmd.SessionId;
-            if (playerDict.ContainsKey(pe.PlayerId))
-                return;
-            //1、发送ACK
-            cmd.Cmd = ProtocolDefine.CMD_ACK;
-            msgMgrInstance.SendCommandMessage(cmd.SessionId,ProtocolDefine.OPERATION_ROOM, cmd);
-            BroadcastCmdHandler += pe.SendCommadMessage;
-            //2、广播房间内所有玩家的信息；
-            foreach (var p in playerDict.Values)
-            {
-                p.SendCommadMessage(ProtocolDefine.OPERATION_ROOM,playerDict.Values.ToList<PlayerEntity>());
-            }
-            playerDict.Add(pe.PlayerId, pe);
-            Utility.Debug.LogWarning($"发送加入房间ACK ,SessionId{cmd.SessionId}");
-        }
-        /// <summary>
-        ///玩家离开； 
-        /// </summary>
-        public void Leave(FixInput cmd )
-        {
-            if (!playerDict.ContainsKey(cmd.PlayerId))
-                return;
-            var pe = playerDict[cmd.PlayerId];
-            //1、发送ACK
-            cmd.Cmd = ProtocolDefine.CMD_ACK;
-           msgMgrInstance.SendCommandMessage(cmd.SessionId,ProtocolDefine.OPERATION_PLYAERINPUT,cmd);
-            BroadcastCmdHandler -= pe.SendCommadMessage;
-            playerDict.Remove(cmd.PlayerId);
-            //2、广播房间内离开玩家的信息；
-            foreach (var p in playerDict.Values)
-            {
-                p.SendCommadMessage(ProtocolDefine.OPERATION_PLYAERINPUT,pe);
-            }
-            pe.Dispose();
         }
         public void OnRefresh()
         {
@@ -170,10 +156,10 @@ namespace CosmosServer
             if (result)
             {
 #if SERVER
-                inputSetProtocol.Tick = tick;
-                inputSetProtocol.InputSet = cmds;
+                playerInputSets.Tick = tick;
+                playerInputSets.InputSet = cmds;
 #endif
-                cmdOpData.DataContract = inputSetProtocol;
+                cmdOpData.DataContract = playerInputSets;
                 broadcastCmdHandler?.Invoke(cmdOpData);
             }
             tick++;
@@ -183,7 +169,7 @@ namespace CosmosServer
             RoomId = 0;
             tick = 0;
             IsAlive = false;
-            inputSetProtocol.Clear();
+            playerInputSets.Clear();
         }
     }
 }
