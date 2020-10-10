@@ -36,6 +36,7 @@ namespace CosmosServer
         public void SendCommadMessage(OperationData data)
         {
 #if !SERVER
+            Facade.CustomeModule<NetManager>().SendCommandMessage(data);
 #else
             GameManager.CustomeModule<MessageManager>().SendCommandMessage(SessionId, data);
 #endif
@@ -43,10 +44,17 @@ namespace CosmosServer
         public void SendCommadMessage<T>(byte opCode, T data, short returnCode = 0)
         {
 #if !SERVER
+            Facade.CustomeModule<NetManager>().SendCommandMessage(opCode,data);
 #else
-            GameManager.CustomeModule<MessageManager>().SendCommandMessage(SessionId,opCode, data,returnCode);
+            GameManager.CustomeModule<MessageManager>().SendCommandMessage(SessionId, opCode, data, returnCode);
 #endif
         }
+#if !SERVER
+        public void UpdateEntity(OperationData data)
+        {
+            agent.UpdateEntity(data.DataContract);
+        }
+#endif
         public override string ToString()
         {
             return $"SessionId:{SessionId} ; PlayerId:{PlayerId}";

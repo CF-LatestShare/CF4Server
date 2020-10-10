@@ -107,7 +107,7 @@ namespace CosmosServer
             {
 #if SERVER
                 player.PlayerId = playerEntity.PlayerId;
-                player.SessionId= playerEntity.SessionId;
+                player.SessionId = playerEntity.SessionId;
                 BroadcastCmdHandler += playerEntity.SendCommadMessage;
                 msgMgrInstance.SendCommandMessage
                     (playerEntity.SessionId, ProtocolDefine.OPERATION_ENTERROOM, roomPlayer, ProtocolDefine.RETURN_SUCCESS);
@@ -116,7 +116,7 @@ namespace CosmosServer
                 playerEntity.SendCommadMessage
                      (ProtocolDefine.OPERATION_EXITROOM, roomPlayer, ProtocolDefine.RETURN_ALREADYEXISTS);
 #else
-                BroadcastCmdHandler += playerEntity.SendCommadMessage;
+                BroadcastCmdHandler += playerEntity.UpdateEntity;
             }
 #endif
             Utility.Debug.LogWarning($"加入房间 ,PlayerEntity{playerEntity}");
@@ -138,7 +138,7 @@ namespace CosmosServer
                 playerEntity.SendCommadMessage
                       (ProtocolDefine.OPERATION_EXITROOM, roomPlayer, ProtocolDefine.RETURN_NOTFOUND);
 #else
-                BroadcastCmdHandler -= playerEntity.SendCommadMessage;
+                BroadcastCmdHandler -= playerEntity.UpdateEntity;
             }
 #endif
             Utility.Debug.LogWarning($"离开房间 ,PlayerEntity{playerEntity}");

@@ -14,6 +14,7 @@ namespace CosmosServer
     //3、消息处理者完成消息处理后，则返回处理完成的消息；
     //4、发送处理好的消息；
     //==========================================
+#if SERVER
     [CustomeModule]
     public class MessageManager : Module<MessageManager>
     {
@@ -139,4 +140,5 @@ namespace CosmosServer
             opDataQueue.Enqueue(opData);
         }
     }
+#endif
 }
