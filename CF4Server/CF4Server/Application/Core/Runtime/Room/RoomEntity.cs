@@ -55,18 +55,19 @@ namespace CosmosServer
         int tick = 0;
 #if SERVER
         MessageManager msgMgrInstance;
-        PlayerManager playerMgrInstance;
         List<FixPlayer> playerList = new List<FixPlayer>();
+        PlayerManager playerMgrInstance;
 #endif
         FixPlayer player = new FixPlayer();
         FixRoomPlayer roomPlayer = new FixRoomPlayer();
-#if SERVER
         public RoomEntity()
         {
+#if SERVER
             msgMgrInstance = GameManager.CustomeModule<MessageManager>();
             playerMgrInstance = GameManager.CustomeModule<PlayerManager>();
-        }
+#else
 #endif
+        }
         public void Oninit(int roomId)
         {
             this.RoomId = roomId;
@@ -145,6 +146,8 @@ namespace CosmosServer
                 {
                     var opData = new OperationData() { OperationCode = ProtocolDefine.OPERATION_PLAYEREXIT, DataContract = player };
                     broadcastCmdHandler?.Invoke(opData);
+                    var removePlayer= playerList.Find((p) => p.SessionId == player.SessionId);
+                    playerList.Remove(removePlayer);
                 }
                 playerEntity.SendCommadMessage
                     (ProtocolDefine.OPERATION_EXITROOM, roomPlayer, ProtocolDefine.RETURN_SUCCESS);
@@ -183,11 +186,20 @@ namespace CosmosServer
         }
         public void Clear()
         {
+            Utility.Debug.LogInfo($"房间 RoomId:{RoomId} 被回收");
             RoomId = 0;
             tick = 0;
             IsAlive = false;
             playerInputSets.Clear();
+            foreach (var player in playerDict.Values)
+            {
+                player.Dispose();
+            }
             playerDict.Clear();
+            broadcastCmdHandler = null;
+#if SERVER
+            playerList.Clear();
+#endif
         }
     }
 }

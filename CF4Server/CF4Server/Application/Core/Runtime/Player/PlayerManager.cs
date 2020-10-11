@@ -97,5 +97,9 @@ namespace CosmosServer
         {
             return playerDict.TryGetValue(sessionId, out playerEntity);
         }
+        public void ClearAll()
+        {
+            playerDict.Clear();
+        }
     }
 }
