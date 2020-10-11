@@ -6,7 +6,7 @@ using System.Text;
 namespace Protocol
 {
     [MessagePackObject]
-    public class FixRoomPlayer
+    public class FixRoomPlayer: IDataContract
     {
         [Key(0)]
         public int RoomId { get; set; }

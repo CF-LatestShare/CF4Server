@@ -37,6 +37,7 @@ namespace CosmosServer
             }
         }
         public void SendCommandMessage<T>(long sessionId, byte opCode, T data, short returnCode = 0)
+            where T : IDataContract
         {
             var opData = SpawnOpData(opCode, data, returnCode);
             var buffer = Utility.MessagePack.ToByteArray(opData);
@@ -125,6 +126,7 @@ namespace CosmosServer
             }
         }
         OperationData SpawnOpData<T>(byte opCode, T packet, short returnCode = 0)
+            where T : IDataContract
         {
             var result = opDataQueue.TryDequeue(out var opData);
             if (!result)

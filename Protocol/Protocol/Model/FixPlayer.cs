@@ -5,7 +5,7 @@ using MessagePack;
 namespace Protocol
 {
     [MessagePackObject]
-    public class FixPlayer:IDisposable
+    public class FixPlayer : IDataContract, IDisposable
     {
         [Key(0)]
         public int SessionId { get; set; }
@@ -14,7 +14,11 @@ namespace Protocol
         public void Dispose()
         {
             SessionId = 0;
-            PlayerId= 0;
+            PlayerId = 0;
+        }
+        public override string ToString()
+        {
+            return $"SessionId:{SessionId} ; PlayerId:{PlayerId}";
         }
     }
 }

@@ -9,19 +9,21 @@ namespace Protocol
     /// 测试用输入协议；
     /// </summary>
     [MessagePackObject]
-    public class FixInput
+    public class FixInput:IDataContract
     {
         [Key(0)]
-        public FixPlayer  Player{ get; set; }
+        public int SessionId { get; set; }
         [Key(1)]
-        public int RoomId { get; set; }
+        public int PlayerId { get; set; }
         [Key(2)]
-        public int Tick { get; set; }
+        public int RoomId { get; set; }
         [Key(3)]
-        public FixVector3 Position { get; set; }
+        public int Tick { get; set; }
         [Key(4)]
-        public  FixVector3 Rotation { get; set; }
+        public FixVector3 Position { get; set; }
         [Key(5)]
+        public FixVector3 Rotation { get; set; }
+        [Key(6)]
         public bool ShiftDown { get; set; }
     }
 }

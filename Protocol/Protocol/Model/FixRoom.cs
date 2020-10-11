@@ -5,7 +5,7 @@ using MessagePack;
 namespace Protocol
 {
     [MessagePackObject]
-    public class FixRoom
+    public class FixRoom: IDataContract
     {
         [Key(0)]
         public int RoomId { get; set; }

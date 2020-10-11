@@ -42,6 +42,7 @@ namespace CosmosServer
 #endif
         }
         public void SendCommadMessage<T>(byte opCode, T data, short returnCode = 0)
+            where T : IDataContract
         {
 #if !SERVER
             Facade.CustomeModule<NetManager>().SendCommandMessage(opCode,data);

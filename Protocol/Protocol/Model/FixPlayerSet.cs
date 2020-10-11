@@ -5,7 +5,7 @@ using MessagePack;
 namespace Protocol
 {
     [MessagePackObject]
-    public class FixPlayerSet
+    public class FixPlayerSet: IDataContract
     {
         [Key(0)]
         public List<FixPlayer> PlayerList { get; set; }

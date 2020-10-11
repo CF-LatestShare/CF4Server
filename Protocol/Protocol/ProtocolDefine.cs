@@ -28,6 +28,10 @@ namespace Protocol
 
         #region Operation Range[16 , 255] ; Count:240;
         /// <summary>
+        /// 测试通道；
+        /// </summary>
+        public const byte OPERATION_TESTCAHNNEL = 16;
+        /// <summary>
         /// PlayerInput;
         /// </summary>
         public const byte OPERATION_PLYAERINPUT = 17;

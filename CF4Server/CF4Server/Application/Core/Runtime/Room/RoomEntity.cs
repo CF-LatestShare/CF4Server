@@ -18,7 +18,7 @@ namespace CosmosServer
         /// 当前房间内玩家人数；
         /// </summary>
         public int PlayerCount { get { return playerDict.Count; } }
-        public bool IsFull { get { return PlayerCount >= _MaxPlayer; } }
+        public bool Enterable { get { return playerDict.Count < _MaxPlayer; } }
         public bool IsRunning { get; private set; }
         /// <summary>
         /// 当前房间帧指令数据字典；
@@ -119,7 +119,7 @@ namespace CosmosServer
                 BroadcastCmdHandler += playerEntity.UpdateEntity;
             }
 #endif
-            Utility.Debug.LogWarning($"加入房间 ,PlayerEntity{playerEntity}");
+            Utility.Debug.LogWarning($"加入房间 ,PlayerEntity : {playerEntity}");
         }
         public void Exit(PlayerEntity playerEntity)
         {
@@ -138,10 +138,11 @@ namespace CosmosServer
                 playerEntity.SendCommadMessage
                       (ProtocolDefine.OPERATION_EXITROOM, roomPlayer, ProtocolDefine.RETURN_NOTFOUND);
 #else
+                playerEntity.Dispose();
                 BroadcastCmdHandler -= playerEntity.UpdateEntity;
             }
 #endif
-            Utility.Debug.LogWarning($"离开房间 ,PlayerEntity{playerEntity}");
+            Utility.Debug.LogWarning($"离开房间 ,PlayerEntity : {playerEntity}");
         }
         public void RunGame()
         {
@@ -170,6 +171,7 @@ namespace CosmosServer
             tick = 0;
             IsAlive = false;
             playerInputSets.Clear();
+            playerDict.Clear();
         }
     }
 }

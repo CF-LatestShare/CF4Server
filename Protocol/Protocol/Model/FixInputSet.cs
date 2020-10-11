@@ -6,7 +6,7 @@ using MessagePack;
 namespace Protocol
 {
     [MessagePackObject]
-    public class FixInputSet
+    public class FixInputSet: IDataContract
     {
         [Key(0)]
         public int Tick { get; set; }

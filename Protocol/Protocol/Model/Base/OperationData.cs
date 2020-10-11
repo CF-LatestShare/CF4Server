@@ -5,12 +5,12 @@ using MessagePack;
 namespace Protocol
 {
     [MessagePackObject]
-    public class OperationData:IDisposable
+    public class OperationData : IDisposable
     {
         [Key(0)]
         public byte OperationCode { get; set; }
         [Key(1)]
-        public object DataContract { get; set; }
+        public IDataContract DataContract { get; set; }
         [Key(2)]
         public short ReturnCode { get; set; }
         public OperationData() { }

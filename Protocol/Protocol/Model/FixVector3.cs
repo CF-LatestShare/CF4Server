@@ -7,7 +7,7 @@ namespace Protocol
 {
     [Serializable]
     [MessagePackObject]
-    public class FixVector3
+    public struct FixVector3 : IDataContract
     {
         [Key(0)]
         public int X { get; set; }
@@ -17,9 +17,9 @@ namespace Protocol
         public int Z { get; set; }
         public void SetVector(Vector3 vector)
         {
-            X = Mathf.FloorToInt( vector.x);
+            X = Mathf.FloorToInt(vector.x);
             Y = Mathf.FloorToInt(vector.y);
-            Z = Mathf.FloorToInt (vector.z);
+            Z = Mathf.FloorToInt(vector.z);
         }
         public Vector3 GetVector()
         {

@@ -53,7 +53,10 @@ namespace Cosmos.Network
         }
         public bool TryRemove(long key, out IRemotePeer peer)
         {
-            return clientPeerDict.TryRemove(key, out peer);
+            var result = clientPeerDict.TryRemove(key, out peer);
+            if (result)
+                peerDisconnectHandler?.Invoke(peer);
+            return result;
         }
         public bool TryAdd(long key, IRemotePeer value)
         {

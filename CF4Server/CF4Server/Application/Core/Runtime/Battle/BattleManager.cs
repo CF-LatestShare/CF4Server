@@ -25,6 +25,7 @@ namespace CosmosServer
         {
             CommandEventCore.Instance.AddEventListener(ProtocolDefine.OPERATION_PLYAERINPUT, PlayerInputCommand);
 #if SERVER
+            CommandEventCore.Instance.AddEventListener(ProtocolDefine.OPERATION_TESTCAHNNEL, TestChannelHandler);
             latestTime = Utility.Time.MillisecondTimeStamp() + updateInterval;
 #endif
         }
@@ -57,5 +58,19 @@ namespace CosmosServer
             catch (Exception e){Utility.Debug.LogError(e); }
 #endif
         }
+#if SERVER
+        void TestChannelHandler(OperationData opData)
+        {
+            try
+            {
+                Utility.Debug.LogWarning(opData.DataContract);
+            }
+            catch (Exception e)
+            {
+                Utility.Debug.LogError(e);
+
+            }
+        }
+#endif
     }
 }

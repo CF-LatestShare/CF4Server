@@ -19,7 +19,7 @@ namespace CosmosServer
         /// </summary>
         Queue<PlayerEntity> playerPoolQueue = new Queue<PlayerEntity>();
         int playerIndex;
-        public bool TryAddPlayer(int sessionId,out PlayerEntity playerEntity)
+        public bool TryAddPlayer(int sessionId, out PlayerEntity playerEntity)
         {
 #if SERVER
             var result = playerPoolQueue.TryDequeue(out var pe);
@@ -38,6 +38,31 @@ namespace CosmosServer
             pe.SessionId = sessionId;
             playerEntity = pe;
             return playerDict.TryAdd(pe.PlayerId, pe);
+        }
+        public bool TryAddPlayer(int sessionId, int playerId, out PlayerEntity playerEntity)
+        {
+#if SERVER
+            var result = playerPoolQueue.TryDequeue(out var pe);
+#else
+            PlayerEntity pe = null;
+            bool result = false;
+            if (playerPoolQueue.Count > 0)
+            {
+                pe = playerPoolQueue.Dequeue();
+                result = true;
+            }
+#endif
+            if (!result)
+                pe = new PlayerEntity();
+            pe.SetPlayerId(playerId);
+            pe.SessionId = sessionId;
+            playerEntity = pe;
+            return playerDict.TryAdd(pe.PlayerId, pe);
+        }
+        public bool TryAddPlayer(PlayerEntity playerEntity)
+        {
+            var result = playerDict.TryAdd(playerEntity.PlayerId, playerEntity);
+            return result;
         }
         /// <summary>
         ///移除但是不回收； 
