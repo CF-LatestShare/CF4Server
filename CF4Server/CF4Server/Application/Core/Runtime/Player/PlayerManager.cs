@@ -24,7 +24,7 @@ namespace CosmosServer
 #if SERVER
             var result = playerPoolQueue.TryDequeue(out var pe);
 #else
-            PlayerEntity pe=null;
+            PlayerEntity pe = null;
             bool result = false;
             if (playerPoolQueue.Count > 0)
             {
@@ -34,10 +34,14 @@ namespace CosmosServer
 #endif
             if (!result)
                 pe = new PlayerEntity();
-            pe.SetPlayerId(playerIndex++);
             pe.SessionId = sessionId;
+            var canAdd = playerDict.TryAdd(pe.SessionId, pe);
+            if (canAdd)
+            {
+                pe.SetPlayerId(playerIndex++);
+            }
             playerEntity = pe;
-            return playerDict.TryAdd(pe.SessionId, pe);
+            return canAdd;
         }
         public bool TryAddPlayer(int sessionId, int playerId, out PlayerEntity playerEntity)
         {
@@ -54,10 +58,14 @@ namespace CosmosServer
 #endif
             if (!result)
                 pe = new PlayerEntity();
-            pe.SetPlayerId(playerId);
             pe.SessionId = sessionId;
+            var canAdd = playerDict.TryAdd(pe.SessionId, pe);
+            if (canAdd)
+            {
+                pe.SetPlayerId(playerId);
+            }
             playerEntity = pe;
-            return playerDict.TryAdd(pe.SessionId, pe);
+            return canAdd;
         }
         public bool TryAddPlayer(PlayerEntity playerEntity)
         {

@@ -11,6 +11,8 @@ namespace Protocol
     [Union(3, typeof(FixRoom))]
     [Union(4, typeof(FixRoomPlayer))]
     [Union(5, typeof(FixInputSet))]
+    [Union(6, typeof(FixRoomEntity))]
+    [Union(7, typeof(DataParameters))]
     public interface IDataContract
     {
     }

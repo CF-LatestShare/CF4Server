@@ -43,6 +43,14 @@ namespace Protocol
         /// ExitRoom;
         /// </summary>
         public const byte OPERATION_EXITROOM = 19;
+        /// <summary>
+        /// PlayerEnter
+        /// </summary>
+        public const byte OPERATION_PLAYERENTER = 20;
+        /// <summary>
+        /// PlayerExit
+        /// </summary>
+        public const byte OPERATION_PLAYEREXIT = 21;
         #endregion
 
         #region ReturnCode  Range[256 , 319] ; Count:64;

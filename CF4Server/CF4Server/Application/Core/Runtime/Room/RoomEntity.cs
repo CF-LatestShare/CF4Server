@@ -56,6 +56,7 @@ namespace CosmosServer
 #if SERVER
         MessageManager msgMgrInstance;
         PlayerManager playerMgrInstance;
+        List<FixPlayer> playerList = new List<FixPlayer>();
 #endif
         FixPlayer player = new FixPlayer();
         FixRoomPlayer roomPlayer = new FixRoomPlayer();
@@ -102,19 +103,30 @@ namespace CosmosServer
 #endif
         public void Enter(PlayerEntity playerEntity)
         {
-            var result = playerDict.TryAdd(playerEntity.PlayerId, playerEntity);
+            var result = playerDict.TryAdd(playerEntity.SessionId, playerEntity);
             if (result)
             {
 #if SERVER
-                player.PlayerId = playerEntity.PlayerId;
-                player.SessionId = playerEntity.SessionId;
+                var fixPlayer = new FixPlayer();
+                fixPlayer.PlayerId = playerEntity.PlayerId;
+                fixPlayer.SessionId = playerEntity.SessionId;
+                playerList.Add(fixPlayer);
+                {
+                    var opData = new OperationData() { OperationCode = ProtocolDefine.OPERATION_PLAYERENTER, DataContract = fixPlayer };
+                    broadcastCmdHandler?.Invoke(opData);
+                }
                 BroadcastCmdHandler += playerEntity.SendCommadMessage;
-                msgMgrInstance.SendCommandMessage
-                    (playerEntity.SessionId, ProtocolDefine.OPERATION_ENTERROOM, roomPlayer, ProtocolDefine.RETURN_SUCCESS);
+                {
+                    FixRoomEntity fre = new FixRoomEntity();
+                    fre.RoomId = RoomId;
+                    fre.Players = playerList;
+                    msgMgrInstance.SendCommandMessage
+                    (playerEntity.SessionId, ProtocolDefine.OPERATION_ENTERROOM, fre, ProtocolDefine.RETURN_SUCCESS);
+                }
             }
             else
                 playerEntity.SendCommadMessage
-                     (ProtocolDefine.OPERATION_EXITROOM, roomPlayer, ProtocolDefine.RETURN_ALREADYEXISTS);
+                     (ProtocolDefine.OPERATION_ENTERROOM, new FixRoomEntity(), ProtocolDefine.RETURN_ALREADYEXISTS);
 #else
                 BroadcastCmdHandler += playerEntity.UpdateEntity;
             }
@@ -123,13 +135,17 @@ namespace CosmosServer
         }
         public void Exit(PlayerEntity playerEntity)
         {
-            var result = playerDict.Remove(playerEntity.PlayerId);
+            var result = playerDict.Remove(playerEntity.SessionId);
             if (result)
             {
 #if SERVER
                 player.PlayerId = playerEntity.PlayerId;
                 player.SessionId = playerEntity.SessionId;
                 BroadcastCmdHandler -= playerEntity.SendCommadMessage;
+                {
+                    var opData = new OperationData() { OperationCode = ProtocolDefine.OPERATION_PLAYEREXIT, DataContract = player };
+                    broadcastCmdHandler?.Invoke(opData);
+                }
                 playerEntity.SendCommadMessage
                     (ProtocolDefine.OPERATION_EXITROOM, roomPlayer, ProtocolDefine.RETURN_SUCCESS);
                 playerEntity.Dispose();

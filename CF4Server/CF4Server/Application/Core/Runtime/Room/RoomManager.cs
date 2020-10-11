@@ -1,7 +1,5 @@
 ﻿using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.InteropServices.ComTypes;
 using System.Text;
 using Cosmos;
@@ -42,6 +40,8 @@ namespace CosmosServer
             playerMgrInstance = GameManager.CustomeModule<PlayerManager>();
             latestTime = Utility.Time.MillisecondTimeStamp() + updateInterval;
 #else
+            CommandEventCore.Instance.AddEventListener(ProtocolDefine.OPERATION_PLAYERENTER, PlayerEnterHandler);
+            CommandEventCore.Instance.AddEventListener(ProtocolDefine.OPERATION_PLAYEREXIT, PlayerExitHandler);
             playerMgrInstance = Facade.CustomeModule<PlayerManager>();
 #endif
 
@@ -67,19 +67,14 @@ namespace CosmosServer
 #if SERVER
                 //系统分配房间；
                 FixPlayer player = opData.DataContract as FixPlayer;
-                var enterableRoom = Utility.Algorithm.Find(roomDict.Values.ToArray(), (r) =>r.Enterable);
+                List<RoomEntity> roomSet = new List<RoomEntity>();
+                roomSet.AddRange(roomDict.Values);
+                var enterableRoom = roomSet.Find((r) => r.Enterable);
                 if (enterableRoom == null)
-                {
-                    SpawnRoom(out  var er );
-                    enterableRoom = er;
-                    Utility.Debug.LogWarning($"未查找到可进入房间：当前房间数量：{roomDict.Count},roomIndex:{roomIndex};");
-                }
-                else
-                {
-                    Utility.Debug.LogWarning($"查找到可进入房间 RoomId:{enterableRoom.RoomId}；当前房间数量：{roomDict.Count}");
-                }
-                playerMgrInstance.TryAddPlayer(player.SessionId, out var pe);
-                enterableRoom.Enter(pe);
+                    SpawnRoom(out enterableRoom);
+                var result = playerMgrInstance.TryAddPlayer(player.SessionId, out var pe);
+                if (result)
+                    enterableRoom.Enter(pe);
 #else
                 FixRoomPlayer rp = opData.DataContract as FixRoomPlayer;
                 var result = playerMgrInstance.TryAddPlayer(rp.Player.SessionId, rp.Player.PlayerId, out var pe);
@@ -103,10 +98,12 @@ namespace CosmosServer
 #if SERVER
                 var rp = opData.DataContract as FixRoomPlayer;
                 roomDict.TryGetValue(rp.RoomId, out var roomEntity);
-                playerMgrInstance.TryRemovePlayer(rp.Player.SessionId, out var pe);
-                roomEntity.Exit(pe);
-                if (roomEntity.PlayerCount == 0)
-                    DespawnRoom(roomEntity);
+                var result = playerMgrInstance.TryGetPlayer(rp.Player.SessionId, out var pe);
+                {
+                    roomEntity.Exit(pe);
+                    if (roomEntity.PlayerCount == 0)
+                        DespawnRoom(roomEntity);
+                }
 #else
                 FixRoomPlayer rp = opData.DataContract as FixRoomPlayer;
                 var result = playerMgrInstance.TryRemovePlayer(rp.Player.SessionId, out var pe);
@@ -141,8 +138,41 @@ namespace CosmosServer
             {
                 Utility.Debug.LogError(e);
             }
-
         }
+#if !SERVER
+        void PlayerEnterHandler(OperationData opData)
+        {
+            try
+            {
+                FixPlayer fp = opData.DataContract as FixPlayer;
+                var result = playerMgrInstance.TryAddPlayer(fp.SessionId, fp.PlayerId, out var pe);
+                if (result)
+                    roomEntity.Enter(pe);
+            }
+            catch (Exception e)
+            {
+                Utility.Debug.LogError(e);
+            }
+        }
+        void PlayerExitHandler(OperationData opData)
+        {
+            try
+            {
+                FixPlayer fp = opData.DataContract as FixPlayer;
+                var result = playerMgrInstance.TryRemovePlayer(fp.SessionId, out var pe);
+                if (result)
+                {
+                    roomEntity.Exit(pe);
+                    if (roomEntity.PlayerCount <= 0)
+                        roomEntity.Clear();
+                }
+            }
+            catch (Exception e)
+            {
+                Utility.Debug.LogError(e);
+            }
+        }
+#endif
         bool SpawnRoom(out RoomEntity room)
         {
 #if SERVER
