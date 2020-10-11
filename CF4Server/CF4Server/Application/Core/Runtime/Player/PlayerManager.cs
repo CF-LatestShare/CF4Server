@@ -37,7 +37,7 @@ namespace CosmosServer
             pe.SetPlayerId(playerIndex++);
             pe.SessionId = sessionId;
             playerEntity = pe;
-            return playerDict.TryAdd(pe.PlayerId, pe);
+            return playerDict.TryAdd(pe.SessionId, pe);
         }
         public bool TryAddPlayer(int sessionId, int playerId, out PlayerEntity playerEntity)
         {
@@ -57,26 +57,26 @@ namespace CosmosServer
             pe.SetPlayerId(playerId);
             pe.SessionId = sessionId;
             playerEntity = pe;
-            return playerDict.TryAdd(pe.PlayerId, pe);
+            return playerDict.TryAdd(pe.SessionId, pe);
         }
         public bool TryAddPlayer(PlayerEntity playerEntity)
         {
-            var result = playerDict.TryAdd(playerEntity.PlayerId, playerEntity);
+            var result = playerDict.TryAdd(playerEntity.SessionId, playerEntity);
             return result;
         }
         /// <summary>
-        ///移除但是不回收； 
+        ///移除但是不回收PlayerEntity； 
         /// </summary>
-        public bool TryRemovePlayer(int playerId, out PlayerEntity playerEntity)
+        public bool TryRemovePlayer(int sessionId, out PlayerEntity playerEntity)
         {
-            return playerDict.Remove(playerId, out playerEntity);
+            return playerDict.Remove(sessionId, out playerEntity);
         }
         /// <summary>
         ///移除且回收； 
         /// </summary>
         public bool TryRemovePlayer(PlayerEntity playerEntity)
         {
-            playerDict.Remove(playerEntity.PlayerId);
+            playerDict.Remove(playerEntity.SessionId);
             playerEntity.Dispose();
             playerPoolQueue.Enqueue(playerEntity);
             return true;
@@ -85,9 +85,9 @@ namespace CosmosServer
         {
             return playerDict.ContainsKey(playerId);
         }
-        public bool TryGetPlayer(int playerId, out PlayerEntity playerEntity)
+        public bool TryGetPlayer(int sessionId, out PlayerEntity playerEntity)
         {
-            return playerDict.TryGetValue(playerId, out playerEntity);
+            return playerDict.TryGetValue(sessionId, out playerEntity);
         }
     }
 }

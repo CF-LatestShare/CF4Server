@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices.ComTypes;
@@ -66,15 +67,16 @@ namespace CosmosServer
 #if SERVER
                 //系统分配房间；
                 FixPlayer player = opData.DataContract as FixPlayer;
-                var enterableRoom = Utility.Algorithm.Find(roomDict.Values.ToArray(), (r) => r.Enterable);
-                if (enterableRoom==null)
+                var enterableRoom = Utility.Algorithm.Find(roomDict.Values.ToArray(), (r) =>r.Enterable);
+                if (enterableRoom == null)
                 {
-                    SpawnRoom(out enterableRoom);
-                    Utility.Debug.LogInfo($"房间数量：{roomDict.Count},roomIndex:{roomIndex},{enterableRoom.Enterable};{roomDict.Values.ToArray().Length}");
+                    SpawnRoom(out  var er );
+                    enterableRoom = er;
+                    Utility.Debug.LogWarning($"未查找到可进入房间：当前房间数量：{roomDict.Count},roomIndex:{roomIndex};");
                 }
                 else
                 {
-                    Utility.Debug.LogInfo($"查找到可进入房间 RoomId:{enterableRoom.RoomId}；当前房间数量：{roomDict.Count}");
+                    Utility.Debug.LogWarning($"查找到可进入房间 RoomId:{enterableRoom.RoomId}；当前房间数量：{roomDict.Count}");
                 }
                 playerMgrInstance.TryAddPlayer(player.SessionId, out var pe);
                 enterableRoom.Enter(pe);
@@ -101,13 +103,13 @@ namespace CosmosServer
 #if SERVER
                 var rp = opData.DataContract as FixRoomPlayer;
                 roomDict.TryGetValue(rp.RoomId, out var roomEntity);
-                playerMgrInstance.TryGetPlayer(rp.Player.PlayerId, out var pe);
+                playerMgrInstance.TryRemovePlayer(rp.Player.SessionId, out var pe);
                 roomEntity.Exit(pe);
                 if (roomEntity.PlayerCount == 0)
                     DespawnRoom(roomEntity);
 #else
                 FixRoomPlayer rp = opData.DataContract as FixRoomPlayer;
-                var result = playerMgrInstance.TryRemovePlayer(rp.Player.PlayerId, out var pe);
+                var result = playerMgrInstance.TryRemovePlayer(rp.Player.SessionId, out var pe);
                 if (result)
                 {
                     roomEntity.Exit(pe);
