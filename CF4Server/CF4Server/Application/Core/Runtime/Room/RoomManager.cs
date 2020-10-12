@@ -133,11 +133,17 @@ namespace CosmosServer
             {
 #if SERVER
                 var input = opData.DataContract as FixInput;
+                if (input == null)
+                {
+                    Utility.Debug.LogWarning("FixInput 为空");
+                    return;
+                }
                 var result = roomDict.TryGetValue(input.RoomId, out var room);
                 if (result)
                     room.OnPlayerInput(input);
 #else
-
+                roomEntity. OnPlayersInput(opData.DataContract as FixInputSet);
+                roomEntity.OnRefresh();
 #endif
             }
             catch (Exception e)

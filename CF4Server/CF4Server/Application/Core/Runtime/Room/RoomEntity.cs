@@ -19,12 +19,11 @@ namespace CosmosServer
         /// </summary>
         public int PlayerCount { get { return playerDict.Count; } }
         public bool Enterable { get { return PlayerCount < _MaxPlayer; } }
-        public bool IsRunning { get; private set; }
         /// <summary>
         /// 当前房间帧指令数据字典；
         /// </summary>
 #if SERVER
-        Dictionary<int, List<FixInput>> tickCmdDict = new Dictionary<int, List<FixInput>>();
+        Dictionary<int, Dictionary<int, FixInput>> tickCmdDict = new Dictionary<int, Dictionary<int, FixInput>>();
 #else
         Dictionary<int, FixInputSet> tickCmdDict = new Dictionary<int, FixInputSet>();
 #endif
@@ -55,7 +54,7 @@ namespace CosmosServer
         int tick = 0;
 #if SERVER
         MessageManager msgMgrInstance;
-        List<FixPlayer> playerList = new List<FixPlayer>();
+        Dictionary<int, FixPlayer> fixPlayerDict = new Dictionary<int, FixPlayer>();
         PlayerManager playerMgrInstance;
 #endif
         FixPlayer player = new FixPlayer();
@@ -65,6 +64,7 @@ namespace CosmosServer
 #if SERVER
             msgMgrInstance = GameManager.CustomeModule<MessageManager>();
             playerMgrInstance = GameManager.CustomeModule<PlayerManager>();
+            cmdOpData.OperationCode = ProtocolDefine.OPERATION_PLYAERINPUT;
 #else
 #endif
         }
@@ -82,9 +82,7 @@ namespace CosmosServer
             //玩家收到当前服务器帧数据；
             if (inputs.Tick > tick)
                 inputs.Tick = tick;
-            var result = tickCmdDict.TryGetValue(inputs.Tick, out var set);
-            if (!result)
-                tickCmdDict.Add(inputs.Tick, inputs);
+            tickCmdDict.TryAdd(inputs.Tick, inputs);
         }
 #endif
 #if SERVER
@@ -95,11 +93,22 @@ namespace CosmosServer
         {
             //若玩家延迟，发送的帧落后当前帧数，则将帧转换为当前帧；
             if (input.Tick < tick)
+            {
                 input.Tick = tick;
-            var result = tickCmdDict.TryGetValue(input.Tick, out var set);
+            }
+            var result = tickCmdDict.TryGetValue(tick, out var dict);
             if (!result)
-                tickCmdDict.Add(input.Tick, new List<FixInput>() { input });
-            set.Add(input);
+            {
+                tickCmdDict.Add(tick, new Dictionary<int, FixInput>());
+                if( tickCmdDict[tick].TryAdd(input.SessionId, input))
+                {
+                    //Utility.Debug.LogInfo($"RoomId：{RoomId},存储帧：{tick}");
+                }
+            }
+            else
+            {
+                dict.TryAdd(input.SessionId, input);
+            }
         }
 #endif
         public void Enter(PlayerEntity playerEntity)
@@ -111,7 +120,7 @@ namespace CosmosServer
                 var fixPlayer = new FixPlayer();
                 fixPlayer.PlayerId = playerEntity.PlayerId;
                 fixPlayer.SessionId = playerEntity.SessionId;
-                playerList.Add(fixPlayer);
+                fixPlayerDict.Add(fixPlayer.SessionId, fixPlayer);
                 {
                     var opData = new OperationData() { OperationCode = ProtocolDefine.OPERATION_PLAYERENTER, DataContract = fixPlayer };
                     broadcastCmdHandler?.Invoke(opData);
@@ -120,7 +129,7 @@ namespace CosmosServer
                 {
                     FixRoomEntity fre = new FixRoomEntity();
                     fre.RoomId = RoomId;
-                    fre.Players = playerList;
+                    fre.Players = fixPlayerDict.Values.ToList<FixPlayer>();
                     msgMgrInstance.SendCommandMessage
                     (playerEntity.SessionId, ProtocolDefine.OPERATION_ENTERROOM, fre, ProtocolDefine.RETURN_SUCCESS);
                 }
@@ -140,14 +149,12 @@ namespace CosmosServer
             if (result)
             {
 #if SERVER
-                player.PlayerId = playerEntity.PlayerId;
-                player.SessionId = playerEntity.SessionId;
+                FixPlayer fixPlayer = new FixPlayer() { PlayerId = playerEntity.PlayerId, SessionId = playerEntity.SessionId };
                 BroadcastCmdHandler -= playerEntity.SendCommadMessage;
                 {
-                    var opData = new OperationData() { OperationCode = ProtocolDefine.OPERATION_PLAYEREXIT, DataContract = player };
+                    var opData = new OperationData() { OperationCode = ProtocolDefine.OPERATION_PLAYEREXIT, DataContract = fixPlayer };
                     broadcastCmdHandler?.Invoke(opData);
-                    var removePlayer= playerList.Find((p) => p.SessionId == player.SessionId);
-                    playerList.Remove(removePlayer);
+                    fixPlayerDict.Remove(playerEntity.SessionId);
                 }
                 playerEntity.SendCommadMessage
                     (ProtocolDefine.OPERATION_EXITROOM, roomPlayer, ProtocolDefine.RETURN_SUCCESS);
@@ -163,13 +170,9 @@ namespace CosmosServer
 #endif
             Utility.Debug.LogInfo($"离开房间 RoomId:{RoomId} ,PlayerEntity : {playerEntity}");
         }
-        public void RunGame()
-        {
-            IsRunning = true;
-        }
         public void OnRefresh()
         {
-            if (!IsRunning)
+            if (!IsAlive)
                 return;
             //广播当前帧，并进入下一帧；
             var result = tickCmdDict.TryGetValue(tick, out var cmds);
@@ -177,10 +180,21 @@ namespace CosmosServer
             {
 #if SERVER
                 playerInputSets.Tick = tick;
-                playerInputSets.InputSet = cmds;
+                playerInputSets.InputDict = cmds;
+                playerInputSets.TS = Utility.Time.MillisecondTimeStamp();
+                Utility.Debug.LogWarning($"房间 RoomId:{RoomId} 找到帧，广播tick:{tick}");
 #endif
                 cmdOpData.DataContract = playerInputSets;
                 broadcastCmdHandler?.Invoke(cmdOpData);
+            }
+            else
+            {
+                playerInputSets.Tick = tick;
+                playerInputSets.TS = Utility.Time.MillisecondTimeStamp();
+                playerInputSets.InputDict = null;
+                cmdOpData.DataContract = playerInputSets;
+                broadcastCmdHandler?.Invoke(cmdOpData);
+                Utility.Debug.LogWarning($"房间 RoomId:{RoomId} 空帧，广播tick:{tick}");
             }
             tick++;
         }
@@ -198,7 +212,7 @@ namespace CosmosServer
             playerDict.Clear();
             broadcastCmdHandler = null;
 #if SERVER
-            playerList.Clear();
+            fixPlayerDict.Clear();
 #endif
         }
     }

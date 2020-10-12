@@ -23,7 +23,7 @@ namespace CosmosServer
 #endif
         public override void OnPreparatory()
         {
-            CommandEventCore.Instance.AddEventListener(ProtocolDefine.OPERATION_PLYAERINPUT, PlayerInputCommand);
+            //CommandEventCore.Instance.AddEventListener(ProtocolDefine.OPERATION_PLYAERINPUT, PlayerInputCommand);
 #if SERVER
             CommandEventCore.Instance.AddEventListener(ProtocolDefine.OPERATION_TESTCAHNNEL, TestChannelHandler);
             latestTime = Utility.Time.MillisecondTimeStamp() + updateInterval;

@@ -6,19 +6,22 @@ using MessagePack;
 namespace Protocol
 {
     [MessagePackObject]
-    public class FixInputSet: IDataContract
+    public class FixInputSet : IDataContract
     {
         [Key(0)]
         public int Tick { get; set; }
         [Key(1)]
         public int RoomId { get; set; }
         [Key(2)]
-        public List<FixInput> InputSet { get; set; }
+        public Dictionary<int, FixInput> InputDict { get; set; }
+        [Key(3)]
+        public long TS { get; set; }
         public void Clear()
         {
             Tick = 0;
             RoomId = 0;
-            InputSet = null;
+            InputDict = null;
+            TS = 0;
         }
     }
 }

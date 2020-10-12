@@ -18,7 +18,7 @@ namespace CosmosServer
             return false;
         }
         static string ip = "127.0.0.1";
-        static int port = 8511;
+        static int port = 8513;
         static void Main(string[] args)
         {
             SetConsoleCtrlHandler(newDelegate, true);

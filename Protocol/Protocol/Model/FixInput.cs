@@ -9,7 +9,7 @@ namespace Protocol
     /// 测试用输入协议；
     /// </summary>
     [MessagePackObject]
-    public class FixInput:IDataContract
+    public class FixInput : IDataContract
     {
         [Key(0)]
         public int SessionId { get; set; }
@@ -25,5 +25,20 @@ namespace Protocol
         public FixVector3 Rotation { get; set; }
         [Key(6)]
         public bool ShiftDown { get; set; }
+        [Key(7)]
+        public long TS { get; set; }
+        public FixInput DeepClone()
+        {
+            return new FixInput()
+            {
+                SessionId = this.SessionId,
+                PlayerId = this.PlayerId,
+                RoomId = this.RoomId,
+                Tick = this.Tick,
+                Position = this.Position,
+                Rotation = this.Rotation,
+                TS = this.TS
+            };
+        }
     }
 }

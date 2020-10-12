@@ -46,7 +46,7 @@ namespace CosmosServer
                 UdpNetMessage msg = UdpNetMessage.EncodeMessageAsync(sessionId, ProtocolDefine.PORT_INPUT, buffer).Result;
                 GameManager.NetworkManager.SendNetworkMessage(msg);
             }
-            DespawnOpData(opData);
+            //DespawnOpData(opData);
         }
         /// <summary>
         /// 初始化消息处理者；
@@ -128,17 +128,23 @@ namespace CosmosServer
         OperationData SpawnOpData<T>(byte opCode, T packet, short returnCode = 0)
             where T : IDataContract
         {
-            var result = opDataQueue.TryDequeue(out var opData);
-            if (!result)
-                opData = new OperationData();
+            var opData = new OperationData();
             opData.DataContract = packet;
             opData.OperationCode = opCode;
             opData.ReturnCode = returnCode;
+
+            //var result = opDataQueue.TryDequeue(out var opData);
+            //if (!result)
+            //    opData = new OperationData();
+            ////opData.Dispose();
+            //opData.DataContract = packet;
+            //opData.OperationCode = opCode;
+            //opData.ReturnCode = returnCode;
             return opData;
         }
         void DespawnOpData(OperationData opData)
         {
-            opData.Dispose();
+            //opData.Dispose();
             opDataQueue.Enqueue(opData);
         }
     }

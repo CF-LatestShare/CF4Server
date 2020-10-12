@@ -15,15 +15,16 @@ namespace Protocol
         public int Y { get; set; }
         [Key(2)]
         public int Z { get; set; }
-        public void SetVector(Vector3 vector)
+        public FixVector3 SetVector(Vector3 vector)
         {
-            X = Mathf.FloorToInt(vector.x);
-            Y = Mathf.FloorToInt(vector.y);
-            Z = Mathf.FloorToInt(vector.z);
+            X = Mathf.FloorToInt(vector.x * 1000);
+            Y = Mathf.FloorToInt(vector.y * 1000);
+            Z = Mathf.FloorToInt(vector.z * 1000);
+            return this;
         }
         public Vector3 GetVector()
         {
-            return new Vector3(X, Y, Z);
+            return new Vector3(X / 1000, Y / 1000, Z / 1000);
         }
     }
 }
