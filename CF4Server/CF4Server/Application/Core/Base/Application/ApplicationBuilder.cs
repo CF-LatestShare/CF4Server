@@ -11,7 +11,7 @@ namespace CosmosServer
         /// 服务器帧数；
         /// 换算成毫秒为125ms/tick;
         /// </summary>
-        public const int TICKRATE = 4;
+        public const int TICKRATE = 8;
         /// <summary>
         /// 每个tick所持续的毫秒；
         /// </summary>
