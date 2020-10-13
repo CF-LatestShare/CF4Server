@@ -40,5 +40,9 @@ namespace Protocol
                 TS = this.TS
             };
         }
+        public override string ToString()
+        {
+            return $"SessionId:{SessionId} ; RoomId:{RoomId} ; Tick : {Tick}";
+        }
     }
 }

@@ -48,7 +48,7 @@ namespace Cosmos
         /// </summary>
         public uint Snd_nxt { get; set; }
         /// <summary>
-        /// 待接收消息序号；
+        /// 对方待接收消息序号；
         /// </summary>
         public uint Rcv_nxt { get; set; }
         /// <summary>

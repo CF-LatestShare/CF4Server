@@ -117,19 +117,23 @@ namespace ProtocolCore
 
         void Error(string msg)
         {
-            StackTrace st = new StackTrace(new StackFrame(4, true));
-            string str = $"{DateTime.Now.ToString()}[ - ] > ERROR : {msg};\nStackTrace[ - ] ：{st}";
+            StackTrace st = new StackTrace(new StackFrame(1, true));
+            StackTrace st0 = new StackTrace(new StackFrame(2, true));
+            StackTrace st1 = new StackTrace(new StackFrame(3, true));
+            StackTrace st2 = new StackTrace(new StackFrame(4, true));
+            string str = $"{DateTime.Now.ToString()}[ - ] > ERROR : {msg};\nStackTrace[ - ] ：\n{st}{st0}{st1}{st2}";
             Utility.IO.AppendWriteTextFile(logFullPath, logFileName, str);
         }
         void Info(string msg)
         {
 #if DEBUG
             StackTrace st = new StackTrace(new StackFrame(4, true));
-            string str = $"{DateTime.Now.ToString()}[ - ] > INFO : {msg};\nStackTrace[ - ] ：{st}";
+            StackTrace st0 = new StackTrace(new StackFrame(5, true));
+            string str = $"{DateTime.Now.ToString()}[ - ] > INFO : {msg};\nStackTrace[ - ] ：\n{st}{st0}";
 #else
             StackTrace st = new StackTrace(new StackFrame(2, true));
             StackTrace st0 = new StackTrace(new StackFrame(3, true));
-            string str = $"{DateTime.Now.ToString()}[ - ] > INFO : {msg};\nStackTrace[ - ] ：\n {st}{st0}";
+            string str = $"{DateTime.Now.ToString()}[ - ] > INFO : {msg};\nStackTrace[ - ] ：\n{st}{st0}";
 #endif
             Utility.IO.AppendWriteTextFile(logFullPath, logFileName, str);
         }
@@ -137,11 +141,12 @@ namespace ProtocolCore
         {
 #if DEBUG
             StackTrace st = new StackTrace(new StackFrame(4, true));
-            string str = $"{DateTime.Now.ToString()}[ - ] > WARN : {msg};\nStackTrace[ - ] ：{st}";
+            StackTrace st0 = new StackTrace(new StackFrame(5, true));
+            string str = $"{DateTime.Now.ToString()}[ - ] > WARN : {msg};\nStackTrace[ - ] ：\n{st}{st0}";
 #else
             StackTrace st = new StackTrace(new StackFrame(2, true));
             StackTrace st0 = new StackTrace(new StackFrame(3, true));
-            string str = $"{DateTime.Now.ToString()}[ - ] > WARN : {msg};\nStackTrace[ - ] ：\n {st}{st0}";
+            string str = $"{DateTime.Now.ToString()}[ - ] > WARN : {msg};\nStackTrace[ - ] ：\n{st}{st0}";
 #endif
             Utility.IO.AppendWriteTextFile(logFullPath, logFileName, str);
         }
@@ -149,11 +154,12 @@ namespace ProtocolCore
         {
 #if DEBUG
             StackTrace st = new StackTrace(new StackFrame(4, true));
-            string str = $"{DateTime.Now.ToString()}[ - ] > FATAL : {msg};\nStackTrace[ - ] ：{st}";
+            StackTrace st0 = new StackTrace(new StackFrame(5, true));
+            string str = $"{DateTime.Now.ToString()}[ - ] > FATAL : {msg};\nStackTrace[ - ] ：\n{st}{st0}";
 #else
             StackTrace st = new StackTrace(new StackFrame(2, true));
             StackTrace st0 = new StackTrace(new StackFrame(3, true));
-            string str = $"{DateTime.Now.ToString()}[ - ] > FATAL : {msg};\nStackTrace[ - ] ：\n {st}{st0}";
+            string str = $"{DateTime.Now.ToString()}[ - ] > FATAL : {msg};\nStackTrace[ - ] ：\n{st}{st0}";
 #endif
             Utility.IO.AppendWriteTextFile(logFullPath, logFileName, str);
         }

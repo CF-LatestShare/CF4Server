@@ -110,25 +110,29 @@ namespace Cosmos.Network
                         if (sndMsgDict.TryRemove(netMsg.SN, out tmpMsg))
                         {
 #if DEBUG
-                            Utility.Debug.LogInfo($" Conv :{Conv}，Receive KCP_ACK Message");
+                            Utility.Debug.LogInfo($"Conv :{Conv}，Receive KCP_ACK Message；SN : {netMsg.SN}");
+#else
+                            Utility.Debug.LogInfo($"Conv :{Conv}，Receive KCP_ACK Message；SN : {netMsg.SN}");
+
 #endif
                             GameManager.ReferencePoolManager.Despawn(tmpMsg);
                         }
                         else
                         {
+                            //丢包处理
 #if DEBUG
-
                             if (netMsg.Conv != 0)
-                                Utility.Debug.LogError($"Receive KCP_ACK Message Exception；SN : {netMsg.SN} ");
+                                Utility.Debug.LogError($"Conv :{Conv}，Receive KCP_ACK Message Exception；SN : {netMsg.SN} ；Snd_una:{netMsg.Snd_una}");
+#else
+                            if (netMsg.Conv != 0)
+                                 Utility.Debug.LogError($"Conv :{Conv}，Receive KCP_ACK Message Exception；SN : {netMsg.SN} ；Snd_una:{netMsg.Snd_una}");
+
 #endif
                         }
                     }
                     break;
                 case KcpProtocol.MSG:
                     {
-#if DEBUG
-                        Utility.Debug.LogInfo($"Conv : {Conv} ,Receive KCP_MSG ：{netMsg},消息体:{Utility.Converter.GetString(netMsg.ServiceMsg)}");
-#endif
                         //生成一个ACK报文，并返回发送
                         var ack = UdpNetMessage.ConvertToACK(netMsg);
                         //这里需要发送ACK报文
@@ -137,7 +141,7 @@ namespace Cosmos.Network
                         {
                             Heartbeat.OnRenewal();
 #if DEBUG
-                            Utility.Debug.LogInfo($" Send KCP_ACK Message，conv :{Conv} ;  {PeerEndPoint.Address} ;{PeerEndPoint.Port}");
+                            Utility.Debug.LogInfo($"Conv :{Conv}，Send KCP_ACK Message；SN : {netMsg.SN}");
 #endif
                         }
                         else
@@ -184,10 +188,10 @@ namespace Cosmos.Network
                 return;
             foreach (var msg in sndMsgDict.Values)
             {
-                if (msg.RecurCount >= 20)
+                if (msg.RecurCount >= 10)
                 {
                     Available = false;
-                    Utility.Debug.LogInfo($"Peer Conv:{Conv }  Unavailable");
+                    Utility.Debug.LogError($"Peer Conv:{Conv }  Unavailable");
                     AbortConnection();
                     return;
                 }
@@ -197,8 +201,9 @@ namespace Cosmos.Network
                     //重发次数+1
                     msg.RecurCount += 1;
                     //超时重发
-                    sendMessageHandler?.Invoke(msg);
-                    //Utility.Debug.LogInfo($"Peer Conv:{Conv }  ; {msg.ToString()}");
+                    if (sndMsgDict.Remove(msg.SN, out var unaMsg))
+                        sendMessageHandler?.Invoke(msg);
+                    Utility.Debug.LogInfo($"Peer Conv:{Conv }  ; 超时重发：{msg.ToString()}");
                 }
             }
         }
@@ -210,10 +215,12 @@ namespace Cosmos.Network
         public bool EncodeMessage(ref UdpNetMessage netMsg)
         {
             netMsg.TS = Utility.Time.MillisecondTimeStamp();
-            SendSN += 1;
-            netMsg.SN = SendSN;
-            netMsg.Snd_nxt = SendSN + 1;
-            //netMsg.EncodeMessage();
+            if (netMsg.OperationCode != InnerOpCode._Heartbeat)
+            {
+                SendSN += 1;
+                netMsg.SN = SendSN;
+                netMsg.Snd_nxt = SendSN + 1;
+            }
             bool result = true;
             if (Conv != 0)
             {
@@ -278,8 +285,7 @@ namespace Cosmos.Network
 #if DEBUG
             Utility.Debug.LogWarning($"Peer Conv:{Conv}， HandleMsgSN : {netMsg.ToString()}");
 #endif
-            UdpNetMessage nxtNetMsg;
-            if (rcvMsgDict.TryRemove(HandleSN + 1, out nxtNetMsg))
+            if (rcvMsgDict.TryRemove(HandleSN + 1, out var nxtNetMsg))
             {
 #if DEBUG
                 Utility.Debug.LogInfo($"HandleMsgSN Next KCP_MSG : {netMsg.ToString()}");

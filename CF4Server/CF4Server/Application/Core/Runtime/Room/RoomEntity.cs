@@ -19,6 +19,7 @@ namespace CosmosServer
         /// </summary>
         public int PlayerCount { get { return playerDict.Count; } }
         public bool Enterable { get { return PlayerCount < _MaxPlayer; } }
+        public bool Full { get; private set; }
         /// <summary>
         /// 当前房间帧指令数据字典；
         /// </summary>
@@ -91,6 +92,7 @@ namespace CosmosServer
         /// </summary>
         public void OnPlayerInput(FixInput input)
         {
+            Utility.Debug.LogInfo($"RoomId：{RoomId},FixInput：{input}");
             //若玩家延迟，发送的帧落后当前帧数，则将帧转换为当前帧；
             if (input.Tick < tick)
             {
@@ -117,15 +119,12 @@ namespace CosmosServer
             if (result)
             {
 #if SERVER
-                var fixPlayer = new FixPlayer();
-                fixPlayer.PlayerId = playerEntity.PlayerId;
-                fixPlayer.SessionId = playerEntity.SessionId;
+                FixPlayer fixPlayer = new FixPlayer() { PlayerId = playerEntity.PlayerId, SessionId = playerEntity.SessionId };
                 fixPlayerDict.Add(fixPlayer.SessionId, fixPlayer);
                 {
                     var opData = new OperationData() { OperationCode = ProtocolDefine.OPERATION_PLAYERENTER, DataContract = fixPlayer };
                     broadcastCmdHandler?.Invoke(opData);
                 }
-                BroadcastCmdHandler += playerEntity.SendCommadMessage;
                 {
                     FixRoomEntity fre = new FixRoomEntity();
                     fre.RoomId = RoomId;
@@ -133,10 +132,8 @@ namespace CosmosServer
                     msgMgrInstance.SendCommandMessage
                     (playerEntity.SessionId, ProtocolDefine.OPERATION_ENTERROOM, fre, ProtocolDefine.RETURN_SUCCESS);
                 }
+                BroadcastCmdHandler += playerEntity.SendCommadMessage;
             }
-            else
-                playerEntity.SendCommadMessage
-                     (ProtocolDefine.OPERATION_ENTERROOM, new FixRoomEntity(), ProtocolDefine.RETURN_ALREADYEXISTS);
 #else
                 BroadcastCmdHandler += playerEntity.UpdateEntity;
             }
@@ -160,9 +157,6 @@ namespace CosmosServer
                     (ProtocolDefine.OPERATION_EXITROOM, roomPlayer, ProtocolDefine.RETURN_SUCCESS);
                 playerEntity.Dispose();
             }
-            else
-                playerEntity.SendCommadMessage
-                      (ProtocolDefine.OPERATION_EXITROOM, roomPlayer, ProtocolDefine.RETURN_NOTFOUND);
 #else
                 playerEntity.Dispose();
                 BroadcastCmdHandler -= playerEntity.UpdateEntity;
@@ -174,29 +168,24 @@ namespace CosmosServer
         {
             if (!IsAlive)
                 return;
+            //if (!Full)
+            //    return;
             //广播当前帧，并进入下一帧；
             var result = tickCmdDict.TryGetValue(tick, out var cmds);
+            playerInputSets.Tick = tick;
+            playerInputSets.InputDict = cmds;
+            playerInputSets.TS = Utility.Time.MillisecondTimeStamp();
+            cmdOpData.DataContract = playerInputSets;
+            broadcastCmdHandler?.Invoke(cmdOpData);
+            tick++;
             if (result)
             {
-#if SERVER
-                playerInputSets.Tick = tick;
-                playerInputSets.InputDict = cmds;
-                playerInputSets.TS = Utility.Time.MillisecondTimeStamp();
-                Utility.Debug.LogWarning($"房间 RoomId:{RoomId} 找到帧，广播tick:{tick}");
-#endif
-                cmdOpData.DataContract = playerInputSets;
-                broadcastCmdHandler?.Invoke(cmdOpData);
+               // Utility.Debug.LogWarning($"房间 RoomId:{RoomId} 找到帧，广播tick:{tick}");
             }
             else
             {
-                playerInputSets.Tick = tick;
-                playerInputSets.TS = Utility.Time.MillisecondTimeStamp();
-                playerInputSets.InputDict = null;
-                cmdOpData.DataContract = playerInputSets;
-                broadcastCmdHandler?.Invoke(cmdOpData);
-                Utility.Debug.LogWarning($"房间 RoomId:{RoomId} 空帧，广播tick:{tick}");
+               // Utility.Debug.LogWarning($"房间 RoomId:{RoomId} 空帧，广播tick:{tick}");
             }
-            tick++;
         }
         public void Clear()
         {
