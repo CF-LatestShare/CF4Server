@@ -12,6 +12,7 @@ namespace Protocol
         public int RoomId { get; set; }
         [Key(1)]
         public List<FixPlayer> Players { get; set; }
-
+        [Key(2)]
+        public int MSPerTick { get; set; }
     }
 }

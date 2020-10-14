@@ -128,6 +128,7 @@ namespace CosmosServer
                 {
                     FixRoomEntity fre = new FixRoomEntity();
                     fre.RoomId = RoomId;
+                    fre.MSPerTick= ApplicationBuilder._MSPerTick;
                     fre.Players = fixPlayerDict.Values.ToList<FixPlayer>();
                     msgMgrInstance.SendCommandMessage
                     (playerEntity.SessionId, ProtocolDefine.OPERATION_ENTERROOM, fre, ProtocolDefine.RETURN_SUCCESS);
